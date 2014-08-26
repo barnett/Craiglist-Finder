@@ -11,7 +11,7 @@
       - @rooms.each do |room|
         %tr
           %td= link_to room.href, room.href
-          %td= link_to room.email, "mailto:#{room.email}"
+          %td= link_to room.email, "mailto:#{room.email}" if room.email.present?
           %td= room.emailed_at
           %td= link_to 'Edit', edit_room_path(room)
           %td= link_to 'Destroy', room, method: :delete, data: { confirm: 'Are you sure?' }

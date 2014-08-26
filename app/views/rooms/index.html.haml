@@ -1,0 +1,21 @@
+- if current_user.ready?
+  %h1 Listing rooms
+  %table
+    %thead
+      %tr
+        %th Link
+        %th Email
+        %th Emailed at
+        %th{:colspan => "3"}
+    %tbody
+      - @rooms.each do |room|
+        %tr
+          %td= room.href
+          %td= room.email
+          %td= room.emailed_at
+          %td= link_to 'Show', room
+          %td= link_to 'Edit', edit_room_path(room)
+          %td= link_to 'Destroy', room, method: :delete, data: { confirm: 'Are you sure?' }
+  %br/
+
+= render 'settings'

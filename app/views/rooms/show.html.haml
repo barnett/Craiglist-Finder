@@ -1,0 +1,10 @@
+%p#notice= notice
+%p
+  %strong Href:
+  = @room.href
+%p
+  %strong Emailed at:
+  = @room.emailed_at
+= link_to 'Edit', edit_room_path(@room)
+|
+\#{link_to 'Back', rooms_path}

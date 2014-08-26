@@ -13,7 +13,7 @@ class CraigScraper
     agent.user_agent_alias = 'Mac Safari'
     agent.robots           = false
 
-    agent.get(@user.url, headers: header) do |page|
+    agent.get(@user.url) do |page|
 
       doc = page.parser
 

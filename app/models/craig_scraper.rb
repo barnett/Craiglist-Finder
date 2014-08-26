@@ -1,3 +1,5 @@
+require 'mechanize'
+
 class CraigScraper
 
   def initialize(user_id)
@@ -10,29 +12,33 @@ class CraigScraper
     # Create a Mechanize agent
     a = Mechanize.new { |agent| agent.user_agent_alias = 'Mac Safari' }
 
-    a.get(@user.url) do |page|
-      doc = page.parser
-      # Parse each link on the page
-      links = doc.css("a").map {|link| link["href"]}.select { |link| (link.match(/\/sfc\/#{type}\/\d+/))? true : false  }.uniq!
+    begin
+      page = a.get(@user.url)
+    rescue Mechanize::ResponseCodeError => exception
+      page = exception.page if exception.response_code == '403'
+    end
 
-      # iterate through each link
-      links.each do |post_link|
-        begin
-          # Create an Room check if you've already contacted it using ActiveRecord create
-          href = "http://sfbay.craigslist.org#{post_link}"
-          room = @user.rooms.new(href: href)
+    doc = page.parser
+    # Parse each link on the page
+    links = doc.css("a").map {|link| link["href"]}.select { |link| (link.match(/\/sfc\/#{type}\/\d+/))? true : false  }.uniq!
 
-          if room.valid?
-            contact_url = construct_contact_url(room.href)
-            room.email = parse_email(contact_url)
-            room.save
-          else
-            @logger.info("Already contacted #{href}")
-          end
-        rescue Exception => e
-          @logger.error(e)
-          @logger.error(e.backtrace)
+    # iterate through each link
+    links.each do |post_link|
+      begin
+        # Create an Room check if you've already contacted it using ActiveRecord create
+        href = "http://sfbay.craigslist.org#{post_link}"
+        room = @user.rooms.new(href: href)
+
+        if room.valid?
+          contact_url = construct_contact_url(room.href)
+          room.email = parse_email(contact_url).try(:strip)
+          room.save
+        else
+          @logger.info("Already contacted #{href}")
         end
+      rescue Exception => e
+        @logger.error(e)
+        @logger.error(e.backtrace)
       end
     end
   end

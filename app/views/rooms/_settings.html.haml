@@ -1,5 +1,9 @@
+%h3 Settings
 = simple_form_for current_user do |f|
-  = f.input :url
-  = f.input :subject
-  = f.input :message
+  .row
+    .small-8.columns= f.input :url
+  .row
+    .small-8.columns= f.input :subject
+  .row
+    .small-8.columns= f.input :message, as: :text, input_html: {style: 'height: 300px;'}
   = f.button :submit, 'Submit'

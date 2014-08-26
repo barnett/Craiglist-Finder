@@ -37,7 +37,7 @@ class User < ActiveRecord::Base
   end
 
   def f_name
-    name.split(' ')[0]
+    name && name.split(' ')[0] || 'User'
   end
 
   def ready?

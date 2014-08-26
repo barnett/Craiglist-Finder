@@ -16,9 +16,10 @@ class CraigScraper
       page = a.get(@user.url)
     rescue Mechanize::ResponseCodeError => exception
       page = exception.page if exception.response_code == '403'
+    ensure
+      doc = page.parser
     end
 
-    doc = page.parser
     # Parse each link on the page
     links = doc.css("a").map {|link| link["href"]}.select { |link| (link.match(/\/sfc\/#{type}\/\d+/))? true : false  }.uniq!
 

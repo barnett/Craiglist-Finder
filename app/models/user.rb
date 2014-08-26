@@ -9,11 +9,11 @@ class User < ActiveRecord::Base
 
   scope :ready, -> do
     where('last_sign_in_at > (?)', 7.days.ago)
-      .where('url IS NOT NULL')
-      .where('token IS NOT NULL')
-      .where('message IS NOT NULL')
-      .where('subject IS NOT NULL')
-      .where('housing_type IS NOT NULL')
+      .where.not(url: '')
+      .where.not(token: '')
+      .where.not(message: '')
+      .where.not(subject: '')
+      .where.not(housing_type: '')
   end
 
   def self.find_for_google_oauth2(access_token, signed_in_resource=nil)
@@ -41,7 +41,11 @@ class User < ActiveRecord::Base
   end
 
   def ready?
-    url && token && message && subject && housing_type
+    url.present? &&
+    token.present? &&
+    message.present? &&
+    subject.present? &&
+    housing_type.present?
   end
 
   def set_housing

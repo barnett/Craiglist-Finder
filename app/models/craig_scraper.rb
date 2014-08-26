@@ -3,53 +3,58 @@ require 'mechanize'
 class CraigScraper
 
   def initialize(user_id)
-    @logger = Logger.new('room_finder.log')
+    @logger = Rails.logger
     @user   = User.find(user_id)
   end
 
   def find_rooms
-    type                   = @user.housing_type
-    agent                  = Mechanize.new
-    agent.user_agent_alias = 'Mac Safari'
-    agent.robots           = false
-
-    agent.get(@user.url) do |page|
-
-      doc = page.parser
-
-      # Parse each link on the page
-      links = doc.css("a").map {|link| link["href"]}.select { |link| (link.match(/\/sfc\/#{type}\/\d+/))? true : false  }.uniq!
-
-      # iterate through each link
-      links.each do |post_link|
-        begin
-          # Create an Room check if you've already contacted it using ActiveRecord create
-          href = "http://sfbay.craigslist.org#{post_link}"
-          room = @user.rooms.new(href: href)
-
-          if room.valid?
-            contact_url = construct_contact_url(room.href)
-            room.email = parse_email(contact_url).try(:strip)
-            room.save
-          else
-            @logger.info("Already contacted #{href}")
-          end
-        rescue Exception => e
-          @logger.error(e)
-          @logger.error(e.backtrace)
-        end
-      end
-    end
+    # iterate through each link
+    scrape_links.each { |link| create_room(link) }
   end
 
   private
+
+  def create_room(post_link)
+    # Create an Room check if you've already contacted it using ActiveRecord create
+    href = "http://sfbay.craigslist.org#{post_link}"
+    room = @user.rooms.new(href: href)
+
+    if room.valid?
+      contact_url = construct_contact_url(room.href)
+      room.email = parse_email(contact_url).try(:strip)
+      room.save
+    else
+      @logger.info("Already contacted #{href}")
+    end
+  rescue Exception => e
+    @logger.error(e)
+    @logger.error(e.backtrace)
+  end
 
   # Construct the contact page url
   def construct_contact_url(href)
     base_url = href.slice(/\A.+\.org/)
     listing_id = href.slice(/\d+/)
-    contact_url = base_url + "/reply/" + listing_id
-    return contact_url
+    base_url + "/reply/" + listing_id
+  end
+
+  def scrape_links
+    agent = Mechanize.new do |agent|
+      agent.log = @logger
+      agent.user_agent_alias = 'Mac Safari'
+      agent.robots = false
+    end
+
+    page = agent.get(@user.url)
+
+    page.parser.css("a")
+      .map { |link| link["href"] }
+      .select { |link| link.match(/\/sfc\/#{@user.housing_type}\/\d+/) }
+      .uniq!
+
+  rescue Mechanize::ResponseCodeError => exception
+    sleep(5)
+    retry
   end
 
   def parse_email(contact_url)

@@ -5,13 +5,15 @@ class CraigScraper
   def initialize(user_id)
     @logger = Logger.new('room_finder.log')
     @user   = User.find(user_id)
-    @agent  = Mechanize.new { |agent| agent.user_agent_alias = 'Mac Safari' }
   end
 
   def find_rooms
-    type = @user.housing_type
+    type                   = @user.housing_type
+    agent                  = Mechanize.new
+    agent.user_agent_alias = 'Mac Safari'
+    agent.robots           = false
 
-    @agent.get(@user.url) do |page|
+    agent.get(@user.url, headers: header) do |page|
 
       doc = page.parser
 

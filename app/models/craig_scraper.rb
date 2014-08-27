@@ -15,7 +15,7 @@ class CraigScraper
   private
 
   def cl_area
-    @user.url.match(/http:\/\/(?<area>.*).craigslist.org/)['area']
+    @user.url.match(/:\/\/(?<area>.*).craigslist.org/)['area']
   end
 
   def cl_city
@@ -70,7 +70,7 @@ class CraigScraper
     retries = 0
     url = @user.url
     begin
-      links = agent.get(url)
+      agent.get(url)
         .parser
         .css("a")
         .map { |link| link["href"] }

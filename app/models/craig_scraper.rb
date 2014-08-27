@@ -68,11 +68,11 @@ class CraigScraper
       agent.robots           = false
     end
     retries = 0
-
+    url = @user.url
     begin
-      page = agent.get(@user.url)
-
-      links = page.parser.css("a")
+      links = agent.get(url)
+        .parser
+        .css("a")
         .map { |link| link["href"] }
         .select { |link| link.match(/\/#{cl_city}\/#{@user.housing_type}\/\d+/) }
         .uniq!
@@ -80,6 +80,7 @@ class CraigScraper
     rescue Mechanize::ResponseCodeError => exception
       retries += 1
       agent.cookie_jar.clear!
+      url += '&_=123456' if retries == 1
       sleep(5)
       retry unless retries >= 3
     end

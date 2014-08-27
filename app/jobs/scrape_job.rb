@@ -1,5 +1,5 @@
 class ScrapeJob < Struct.new(:uid)
   def perform
-    CraigScraper.new(uid).find_rooms 
+    CraigScraper.new(uid).create_rooms 
   end
 end

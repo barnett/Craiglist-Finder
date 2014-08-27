@@ -1,7 +1,6 @@
-class EmailJob < Struct.new(:room_id)
+class EmailJob < Struct.new(:user_id)
   def perform
-    room  = Room.find(room_id)
-    gmail = Gmail.new(room.user_id)
-    gmail.send_email(room.email) && room.touch(:emailed_at)
+    gmail = Gmail.new(user_id)
+    gmail.send_emails
   end
 end

@@ -8,18 +8,26 @@ class CraigScraper
   end
 
   # iterate through each link
-  def find_rooms
-    scrape_links.each { |link| create_room(link) }
+  def create_rooms
+    post_links.each { |link| create_room(link) }
   end
 
   private
 
-  def cl_area
-    @user.url.match(/:\/\/(?<area>.*).craigslist.org/)['area']
+  def scraper
+    @scraper ||= Mechanize.new do |agent|
+      agent.log              = @logger
+      agent.user_agent_alias = 'Mac Safari'
+      agent.robots           = false
+    end
   end
 
-  def cl_city
-    @user.url.match(/search\/(?<city>.*)\//)['city']
+  def area
+    @area ||= @user.url.match(/:\/\/(?<area>.*).craigslist.org/)['area']
+  end
+
+  def city
+    @city ||= @user.url.match(/search\/(?<city>.*)\//)['city']
   end
 
   # Construct the contact page url
@@ -31,12 +39,12 @@ class CraigScraper
 
   def create_room(post_link)
     # Create an Room check if you've already contacted it using ActiveRecord create
-    href = "http://#{cl_area}.craigslist.org#{post_link}"
+    href = "http://#{area}.craigslist.org#{post_link}"
     room = @user.rooms.new(href: href)
 
     if room.valid?
-      contact_url = construct_contact_url(room.href)
-      room.email  = parse_email(contact_url).try(:strip)
+      reply_url  = construct_contact_url(room.href)
+      room.email = find_email(reply_url).try(:strip)
       room.save
     else
       @logger.info("Already contacted #{href}")
@@ -46,44 +54,31 @@ class CraigScraper
     @logger.error(e.backtrace)
   end
 
-  def parse_email(contact_url)
-    retries = 0
-    begin
-      xml_elems = Nokogiri::HTML(open(contact_url))
-      email     = xml_elems.css("body > div > ul:nth-child(4) > li > a")[0]
-      email.try(:text)
+  def find_email(reply_url)
+    xml_elems = Nokogiri::HTML(open(reply_url))
+    email     = xml_elems.css("body > div > ul:nth-child(4) > li > a")[0]
 
-    rescue Exception=>e
-      puts "ERROR: #{e}"
-      retries += 1
-      sleep 5
-      retry unless retries >= 3
-    end
+    return nil unless email.present?
+
+    email.text.strip
+
+  rescue Exception=>e
+    puts "ERROR: #{e}"
+    defined?(retries) ? retries += 1 : retries = 0
+    sleep 5
+    retry unless retries >= 3
   end
 
-  def scrape_links
-    agent = Mechanize.new do |agent|
-      agent.log              = @logger
-      agent.user_agent_alias = 'Mac Safari'
-      agent.robots           = false
-    end
-    retries = 0
-    url = @user.url
-    begin
-      agent.get(url)
-        .parser
-        .css("a")
-        .map { |link| link["href"] }
-        .select { |link| link.match(/\/#{cl_city}\/#{@user.housing_type}\/\d+/) }
-        .uniq!
+  def post_links
+    links = scraper.get(@user.url).parser.css("a")
+    links.map { |link| link["href"] }
+      .select { |link| link.match(/\/#{city}\/#{@user.housing_type}\/\d+/) }
+      .uniq!
 
-    rescue Mechanize::ResponseCodeError => exception
-      retries += 1
-      agent.cookie_jar.clear!
-      url += '&_=123456' if retries == 1
-      sleep(5)
-      retry unless retries >= 3
-    end
+  rescue Mechanize::ResponseCodeError => exception
+    defined?(retries) ? retries += 1 : retries = 1
+    sleep(5)
+    retry unless retries >= 3
   end
 
 end

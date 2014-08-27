@@ -2,8 +2,10 @@ module BatchUpdate
 
   def self.email
     User.ready.find_each do |user|
+      gmail = Gmail.new(user.id)
       user.rooms.need_emails.find_each do |room|
-        Delayed::Job.enqueue EmailJob.new(room.id)
+        gmail.email = room.email
+        Delayed::Job.enqueue gmail
       end
     end
   end

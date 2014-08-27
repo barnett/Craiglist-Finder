@@ -11,6 +11,6 @@ module BatchUpdate
   end
 
   def self.scrape
-    User.ready.find_each { |u| Delayed::Job.enqueue ScrapeJob.new(u.id) }
+    User.ready.find_each { |u| Delayed::Job.enqueue CraigScraper.new(u.id) }
   end
 end

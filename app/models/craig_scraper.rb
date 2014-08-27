@@ -1,14 +1,13 @@
 require 'mechanize'
 
 class CraigScraper
-
   def initialize(user_id)
-    @logger = Rails.logger
-    @user   = User.find(user_id)
+    @user = User.find(user_id)
+
   end
 
   # iterate through each link
-  def create_rooms
+  def perform
     post_links.each { |link| create_room(link) }
   end
 
@@ -16,7 +15,7 @@ class CraigScraper
 
   def scraper
     @scraper ||= Mechanize.new do |agent|
-      agent.log              = @logger
+      agent.log              = logger
       agent.user_agent_alias = 'Mac Safari'
       agent.robots           = false
     end
@@ -47,11 +46,11 @@ class CraigScraper
       room.email = find_email(reply_url).try(:strip)
       room.save
     else
-      @logger.info("Already contacted #{href}")
+      logger.info("Already contacted #{href}")
     end
   rescue Exception => e
-    @logger.error(e)
-    @logger.error(e.backtrace)
+    logger.error(e)
+    logger.error(e.backtrace)
   end
 
   def find_email(reply_url)
@@ -63,10 +62,13 @@ class CraigScraper
     email.text.strip
 
   rescue Exception=>e
-    puts "ERROR: #{e}"
     defined?(retries) ? retries += 1 : retries = 0
     sleep 5
     retry unless retries >= 3
+  end
+
+  def logger
+    @logger ||= Rails.logger
   end
 
   def post_links

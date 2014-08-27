@@ -79,6 +79,11 @@ class CraigScraper
 
   rescue Mechanize::ResponseCodeError => exception
     defined?(retries) ? retries += 1 : retries = 1
+
+    logger.info("MECHANIZE: #{scraper.inspect}")
+    logger.info("URL: #{@user.url}")
+    logger.info("Page: #{exception.page}")
+
     sleep(5)
     retry unless retries >= 3
   end

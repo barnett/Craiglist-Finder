@@ -67,17 +67,20 @@ class CraigScraper
       agent.user_agent_alias = 'Mac Safari'
       agent.robots           = false
     end
-    p @user.url
-    page = agent.get(@user.url)
 
-    links = page.parser.css("a")
-      .map { |link| link["href"] }
-      .select { |link| link.match(/\/#{cl_city}\/#{@user.housing_type}/) }
-      .uniq!
+    begin
+      page = agent.get(@user.url)
 
-  rescue Mechanize::ResponseCodeError => exception
-    sleep(5)
-    retry
+      links = page.parser.css("a")
+        .map { |link| link["href"] }
+        .select { |link| link.match(/\/#{cl_city}\/#{@user.housing_type}/) }
+        .uniq!
+
+    rescue Mechanize::ResponseCodeError => exception
+      agent.cookie_jar.clear!
+      sleep(5)
+      retry
+    end
   end
 
 end

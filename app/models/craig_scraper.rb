@@ -14,13 +14,17 @@ class CraigScraper
 
   private
 
+  def cl_area
+    @user.url.match(/http:\/\/(?<area>.*).craigslist.org/)['area']
+  end
+
   def cl_city
     @user.url.match(/search\/(?<city>.*)\//)['city']
   end
 
   def create_room(post_link)
     # Create an Room check if you've already contacted it using ActiveRecord create
-    href = "http://#{cl_city}.craigslist.org#{post_link}"
+    href = "http://#{cl_area}.craigslist.org#{post_link}"
     room = @user.rooms.new(href: href)
 
     if room.valid?

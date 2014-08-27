@@ -22,6 +22,13 @@ class CraigScraper
     @user.url.match(/search\/(?<city>.*)\//)['city']
   end
 
+  # Construct the contact page url
+  def construct_contact_url(href)
+    base_url   = href.slice(/\A.+\.org/)
+    listing_id = href.slice(/\d+/)
+    base_url + "/reply/" + listing_id
+  end
+
   def create_room(post_link)
     # Create an Room check if you've already contacted it using ActiveRecord create
     href = "http://#{cl_area}.craigslist.org#{post_link}"
@@ -39,32 +46,6 @@ class CraigScraper
     @logger.error(e.backtrace)
   end
 
-  # Construct the contact page url
-  def construct_contact_url(href)
-    base_url   = href.slice(/\A.+\.org/)
-    listing_id = href.slice(/\d+/)
-    base_url + "/reply/" + listing_id
-  end
-
-  def scrape_links
-    agent = Mechanize.new do |agent|
-      agent.log              = @logger
-      agent.user_agent_alias = 'Mac Safari'
-      agent.robots           = false
-    end
-
-    page = agent.get(@user.url)
-
-    page.parser.css("a")
-      .map { |link| link["href"] }
-      .select { |link| link.match(/\/#{cl_city}\/#{@user.housing_type}\/\d+/) }
-      .uniq!
-
-  rescue Mechanize::ResponseCodeError => exception
-    sleep(5)
-    retry
-  end
-
   def parse_email(contact_url)
     retries = 0
     begin
@@ -78,6 +59,25 @@ class CraigScraper
       sleep 5
       retry unless retries >= 3
     end
+  end
+
+  def scrape_links
+    agent = Mechanize.new do |agent|
+      agent.log              = @logger
+      agent.user_agent_alias = 'Mac Safari'
+      agent.robots           = false
+    end
+    p @user.url
+    page = agent.get(@user.url)
+
+    links = page.parser.css("a")
+      .map { |link| link["href"] }
+      .select { |link| link.match(/\/#{cl_city}\/#{@user.housing_type}/) }
+      .uniq!
+
+  rescue Mechanize::ResponseCodeError => exception
+    sleep(5)
+    retry
   end
 
 end

@@ -74,7 +74,7 @@ class CraigScraper
 
       links = page.parser.css("a")
         .map { |link| link["href"] }
-        .select { |link| link.match(/\/#{cl_city}\/#{@user.housing_type}/) }
+        .select { |link| link.match(/\/#{cl_city}\/#{@user.housing_type}\/+d*/) }
         .uniq!
 
     rescue Mechanize::ResponseCodeError => exception

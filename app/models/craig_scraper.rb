@@ -67,6 +67,7 @@ class CraigScraper
       agent.user_agent_alias = 'Mac Safari'
       agent.robots           = false
     end
+    retries = 0
 
     begin
       page = agent.get(@user.url)
@@ -77,9 +78,10 @@ class CraigScraper
         .uniq!
 
     rescue Mechanize::ResponseCodeError => exception
+      retries += 1
       agent.cookie_jar.clear!
       sleep(5)
-      retry
+      retry unless retries >= 3
     end
   end
 

@@ -14,10 +14,10 @@ class CraigScraper
   private
 
   def scraper
-    @scraper ||= Mechanize.new do |agent|
-      agent.log              = logger
-      agent.user_agent_alias = 'Mac Safari'
-      agent.robots           = false
+    @scraper = Mechanize.new do |agent|
+      agent.log         = logger
+      agent.ssl_version = 'SSLv3'
+      agent.verify_mode = OpenSSL::SSL::VERIFY_PEER
     end
   end
 

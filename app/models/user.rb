@@ -8,7 +8,7 @@ class User < ActiveRecord::Base
   before_save :set_housing, if: :url_changed?, on: :update
 
   scope :ready, -> do
-    where('last_sign_in_at > (?)', 7.days.ago)
+    where('current_sign_in_at > (?)', 7.days.ago)
       .where.not(url: '')
       .where.not(token: '')
       .where.not(message: '')
